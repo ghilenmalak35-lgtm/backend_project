@@ -1,11 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException,status,APIRouter
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 from database import engine, Base, SessionLocal
 from .model import User
-from .schema import Create_user
+from .schema import Create_user,User_login
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 router = APIRouter(prefix="/users", tags=["users"])
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+def hashPassword(password: str) -> str:
+    return pwd_context.hash(password[:72])
+
+def verifyPassword(password: str, hashed_password: str) :
+    return pwd_context.verify(password, hashed_password)
 def get_db():
     db = SessionLocal()
     try:
@@ -13,13 +20,24 @@ def get_db():
     finally:
         db.close()
 
+@router.post("/login")
+def loginuser(userlogin:User_login, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email ==userlogin.email).first()
+    if not user:
+        return False
+    if not verifyPassword(userlogin.password, user.password):
+        return False
+
+    return user
+
+
 @router.post("/createuser")
-def CreateUser(userss:Create_user, db: Session = Depends(get_db)):
-    userss = User(name=userss.name,email=userss.email,password=userss.password,role=userss.role)
-    db.add(userss)
+def CreateUser(user_data:Create_user, db: Session = Depends(get_db)):
+    user = User(name=user_data.name,email=user_data.email,password=hashPassword(user_data.password),role=user_data.role)
+    db.add(user)
     db.commit()
-    db.refresh(userss)
-    return userss
+    db.refresh(user)
+    return user
 @router.get("/userList")
 def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
@@ -57,3 +75,4 @@ def delete_Student(User_id: int, db: Session = Depends(get_db)):
 
     db.delete(Useres)
     db.commit()
+

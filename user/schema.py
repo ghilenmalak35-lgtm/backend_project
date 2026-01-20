@@ -12,15 +12,14 @@
    # updated_at:str
     #deleted_at:str
 ###
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
-
+from pydantic import BaseModel,constr
 class Create_user(BaseModel):
     name: str
     email: str
-    password:str
+    password:constr(min_length=8, max_length=72)
     role: str
   
-
+class User_login(BaseModel):
+    password:str
+    email:str
    
