@@ -4,6 +4,8 @@ from passlib.context import CryptContext
 from database import engine, Base, SessionLocal
 from .model import User
 from .schema import Create_user,User_login
+from .securiter import create_access_token
+from datetime import timedelta
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 router = APIRouter(prefix="/users", tags=["users"])
@@ -27,8 +29,16 @@ def loginuser(userlogin:User_login, db: Session = Depends(get_db)):
         return False
     if not verifyPassword(userlogin.password, user.password):
         return False
+    access_token = create_access_token(
+        data={"sub": user.email, "user_id": user.id},
+        expires_delta=timedelta(minutes=30)
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user":user
+    }
 
-    return user
 
 
 @router.post("/createuser")
