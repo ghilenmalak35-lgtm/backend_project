@@ -13,7 +13,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 def hashPassword(password: str) -> str:
     return pwd_context.hash(password[:72])
 
-def verifyPassword(password: str, hashed_password: str) :
+def verifyPassword(password: str, hashed_password: str) -> bool :
     return pwd_context.verify(password, hashed_password)
 def get_db():
     db = SessionLocal()
